@@ -3,13 +3,19 @@
 #include <unordered_map>
 #include <string_view>
 #include <memory>
+#include <iostream>
 #include <array>
 #include <vector>
+#include <optional>
+#include <exception>
 
 namespace Parse {
 	using Code = size_t;
-	struct LexerError {
-		std::string what;
+	const int Eof = std::istream::traits_type::eof();
+
+	class LexerError : public std::runtime_error {
+	public:
+		using std::runtime_error::runtime_error;
 	};
 
 	struct Gramar {
@@ -33,26 +39,33 @@ namespace Parse {
 			std::vector<std::string> errors;
 		};
 
-		Lexer(std::shared_ptr<Gramar> gramar) : gramar(gramar) {};
+		Lexer(std::shared_ptr<Gramar> gramar, std::istream& input) : program(input), gramar(gramar) {};
 
-		LexemesList Parse(std::string_view program);
+		void Parse();
+
+		const std::vector<std::string>& Errors() const;
+		const std::vector<LexemesList::Item>& Tokens() const;
+		const std::string& Program() const;
+
 	private:
 		std::shared_ptr<Gramar> gramar;
-		size_t row;
+		std::istream& program;
+		std::optional<LexemesList> parsed_program;
+		size_t row = 0;
 
-		void Whitespace(std::string_view program, size_t& cur, LexemesList& list);
-		void Comment(std::string_view program, size_t& cur, LexemesList& list);
-		void Delimiter(std::string_view program, size_t& cur, LexemesList& list);
-		void KeywordOrIdentifier(std::string_view program, size_t& cur, LexemesList& list);
-		void Constant(std::string_view program, size_t& cur, LexemesList& list);
+		void Whitespace();
+		void Comment();
+		void Delimiter();
+		void KeywordOrIdentifier();
+		void Constant();
 
-		bool LeftPart(std::string& buffer, std::string_view program, size_t& cur);
-		bool RightPart(std::string& buffer, std::string_view program, size_t& cur);
-		void SkipWhitespaces(std::string_view program, size_t& cur);
-
+		bool LeftPart(std::string& buffer);
+		bool RightPart(std::string& buffer);
+		void SkipWhitespaces();
 	};
 
 	std::ostream& operator<<(std::ostream& os, const Lexer::LexemesList& list);
+	std::ostream& operator<<(std::ostream& os, const Lexer::LexemesList::Item& item);
 	bool operator==(const Lexer::LexemesList::Item& lhs, const Lexer::LexemesList::Item& rhs);
 	bool operator==(const Lexer::LexemesList& lhs, const Lexer::LexemesList& rhs);
 }
