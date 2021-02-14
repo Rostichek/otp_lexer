@@ -107,12 +107,14 @@ namespace Parse {
 	void Lexer::Constant() {
 		string buffer;
 		program.get();
+		bool error = 0;
 		if (!gramar->symbols_attributes[program.peek()]) SkipWhitespaces();
 		try {
 			LeftPart(buffer);
 		}
 		catch (LexerError& ex) {
-			throw LexerError{ "Wrong left part;" };
+			error = true;
+			parsed_program.value().errors.emplace_back("Lexical error in " + to_string(row) + " row : " + "Wrong left part;");
 		}
 		if (!gramar->symbols_attributes[program.peek()]) SkipWhitespaces();
 		if (program.peek() != '\'') {
@@ -120,11 +122,13 @@ namespace Parse {
 				RightPart(buffer);
 			}
 			catch (LexerError& ex) {
-				throw LexerError{ "Wrong right part;" };
+				error = true;
+				parsed_program.value().errors.emplace_back("Lexical error in " + to_string(row) + " row : " + "Wrong right part;");
 			}
 		}
-		if (!gramar->symbols_attributes[program.peek()]) SkipWhitespaces();
-		if(program.get() != '\'') throw LexerError{ "Unclosed constant;" };
+		while (program && program.get() != '\'');
+		if (!program) throw LexerError{ "Unclosed constant;" };
+		if (error) return;
 		if(!gramar->constants.count(buffer)) gramar->constants[buffer] = gramar->constant_code++;
 		parsed_program.value().items.push_back({ gramar->constants[buffer], parsed_program.value().program.size() });
 		parsed_program.value().program += '\'' + buffer + '\'';
@@ -151,7 +155,7 @@ namespace Parse {
 				}
 			}
 			catch (LexerError& ex) {
-				parsed_program.value().errors.push_back("Lexical error in " + to_string(row) + " row : " + ex.what());
+				parsed_program.value().errors.emplace_back("Lexical error in " + to_string(row) + " row : " + ex.what());
 			}
 		}
 	}

@@ -165,8 +165,9 @@ void TestErrors() {
 			VAL_1 = '100'	
 			VAL2 = '4'
 			1EMPTY = ''
-			COMPLEX1 = '10 10'
-			COMPLEX2 = '10 $EXP(3'
+			COMPLEX1 = '10 &EXP(4)'
+			COMPLEX2 = '10 10'
+			COMPLEX3 = '10 $EXP(3'
 		BEGIN
 			(*	
 		END
