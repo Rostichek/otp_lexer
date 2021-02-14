@@ -11,16 +11,16 @@
 using namespace std;
 
 void CompileProgram(istream& input, ostream& output) {
-	Parse::Lexer lexer(CreateGramar(), input);
+	Parse::Lexer lexer(CreateGrammar(), input);
 	lexer.Parse();
-	const auto& errors = lexer.Errors();	
+	const auto& errors = lexer.GetErrors();	
 	if (errors.size()) {
 		cerr << errors.size() << "errors;\nErrors list:\n";
 		for (const auto& error : errors)
 			cerr << error << endl;
 	}
 	output << "Lexemes list: " << endl;
-	const auto& tokens = lexer.Tokens();
+	const auto& tokens = lexer.GetTokens();
 	output << tokens;
 }
 

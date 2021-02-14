@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <string_view>
 #include <memory>
+#include <string>
 #include <iostream>
 #include <array>
 #include <vector>
@@ -18,19 +19,21 @@ namespace Parse {
 		using std::runtime_error::runtime_error;
 	};
 
-	struct Gramar {
-		std::unordered_map<std::string_view, Code> key_words;
-		std::unordered_map<std::string_view, Code> constants;
-		std::unordered_map<std::string_view, Code> identifiers;
+	struct Grammar {
+		std::unordered_map<std::string, Code> key_words;
+		std::unordered_map<std::string, Code> constants;
+		std::unordered_map<std::string, Code> identifiers;
 		std::array<size_t, 255> symbols_attributes{ 10 };
-		Code identifier_code = 1001;
-		Code constant_code = 501;
+		const Code identifier_code = 1001;
+		const Code constant_code = 501;
 	};
 
 	class Lexer {
 	public:
 		struct LexemesList {
 			struct Item {
+				Item(Code code, size_t position) : code(code), position(position) {};
+				Item() = default;
 				Code code;
 				size_t position;
 			};
@@ -39,16 +42,16 @@ namespace Parse {
 			std::vector<std::string> errors;
 		};
 
-		Lexer(std::shared_ptr<Gramar> gramar, std::istream& input) : program(input), gramar(gramar) {};
+		Lexer(std::shared_ptr<Grammar> gramar, std::istream& input) : program(input), gramar(gramar) {};
 
 		void Parse();
 
-		const std::vector<std::string>& Errors() const;
-		const std::vector<LexemesList::Item>& Tokens() const;
-		const std::string& Program() const;
+		const std::vector<std::string>& GetErrors() const;
+		const std::vector<LexemesList::Item>& GetTokens() const;
+		const std::string& GetProgram() const;
 
 	private:
-		std::shared_ptr<Gramar> gramar;
+		std::shared_ptr<Grammar> gramar;
 		std::istream& program;
 		std::optional<LexemesList> parsed_program;
 		size_t row = 0;
@@ -59,9 +62,16 @@ namespace Parse {
 		void KeywordOrIdentifier();
 		void Constant();
 
-		bool LeftPart(std::string& buffer);
-		bool RightPart(std::string& buffer);
-		void SkipWhitespaces();
+		void LeftPart(std::string& buffer);
+		void RightPart(std::string& buffer);
+
+		size_t Position() const;
+
+		const LexemesList& List() const;
+		std::vector<std::string>& Errors();
+		std::vector<LexemesList::Item>& Tokens();
+		std::string& Program();
+		LexemesList& List();
 	};
 
 	std::ostream& operator<<(std::ostream& os, const Lexer::LexemesList& list);

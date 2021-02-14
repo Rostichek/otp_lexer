@@ -6,7 +6,7 @@
 #include <string>
 #include <memory>
 
-std::shared_ptr<Parse::Gramar> CreateGramar();
+std::shared_ptr<Parse::Grammar> CreateGrammar();
 
 void TestWhitespaces();
 

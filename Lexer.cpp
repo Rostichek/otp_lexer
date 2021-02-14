@@ -6,27 +6,21 @@
 using namespace std;
 
 namespace Parse {
-	void Lexer::SkipWhitespaces() {
+	void Lexer::Whitespace() {
 		while (!gramar->symbols_attributes[program.peek()]) {
-			if (program.peek() == '\n') 
-				row++;
-			program.get();
+			if (program.peek() == '\n') row++;
+			program.ignore();
 			if (program.peek() == Eof) break;
 		}
 	}
 
-	void Lexer::Whitespace() {
-		SkipWhitespaces();
-	}
-
 	void Lexer::Comment() {
-		program.get();
+		program.ignore();
 		if (program.peek() != '*') throw LexerError{ "Unopened comment;" };
 		bool met_an_asterisk = false;
 		char next;
-		while (1) {
+		while (program) {
 			next = program.get();
-			if (!program) break;
 			if (met_an_asterisk && next == ')')
 				return;
 			met_an_asterisk = (next == '*');
@@ -35,69 +29,68 @@ namespace Parse {
 	}
 
 	void Lexer::Delimiter() {
-		parsed_program.value().items.push_back({ static_cast<Code>(program.peek()), parsed_program.value().program.size() });
-		parsed_program.value().program.push_back(program.get());
+		Tokens().emplace_back(static_cast<Code>(program.peek()), Position());
+		Program() += program.get();
 	}
 
 	void Lexer::KeywordOrIdentifier() {
 		string buffer;
+		char next;
 		while (program) {
-			if (isdigit(program.peek()) || isalpha(program.peek())) {
-				buffer += program.get();
-			}
+			next = program.peek();
+			if (isalnum(next)) buffer += program.get();
 			else break;
 		}
-		if (gramar->key_words.count(buffer)) parsed_program.value().items.push_back({ gramar->key_words[buffer], parsed_program.value().program.size() });
+		if (gramar->key_words.count(buffer)) 
+			Tokens().emplace_back(gramar->key_words[buffer], Position());
 		else {
-			if(!gramar->identifiers.count(buffer))
-				gramar->identifiers[buffer] = gramar->identifier_code++;
-			parsed_program.value().items.push_back({ gramar->identifiers[buffer], parsed_program.value().program.size() });
+			gramar->identifiers.try_emplace(buffer, gramar->identifier_code + gramar->identifiers.size());
+			Tokens().emplace_back(gramar->identifiers[buffer], Position());
 		}
-		parsed_program.value().program += buffer;
+		parsed_program.value().program += move(buffer);
 	}
 
-	bool Lexer::LeftPart(string& buffer) {
+	size_t Lexer::Position() const { return GetProgram().size(); }
+
+	void Lexer::LeftPart(string& buffer) {
 		while (program) {
 			if (isdigit(program.peek())) {
 				buffer += program.peek();
 				program.get();
 			}
 			else {
-				if (!gramar->symbols_attributes[program.peek()] || program.peek() == '\'') return true;
+				char next = program.peek();
+				if (!gramar->symbols_attributes[next] || next == '\'') return;
 				throw LexerError{ "Wrong left part" };
 			}
 		}
 	}
 
-	bool Lexer::RightPart(string& buffer) {
+	void Lexer::RightPart(string& buffer) {
 		if (isdigit(program.peek())) {
 			LeftPart(buffer);
-			return true;
+			return;
 		}
 		string local_buffer;
 		while (program) {
 			if (program.peek() == '(') {
-				program.get();
+				program.ignore();
 				if (local_buffer != "$EXP") 
 					throw LexerError{""};
 				local_buffer += '(';
 				break;
 			}
-			local_buffer += program.peek();
-			program.get();
+			local_buffer += program.get();
 		}
-		if (!gramar->symbols_attributes[program.peek()]) SkipWhitespaces();
+		Whitespace();
 		while (program) {
-			if (isdigit(program.peek())) {
-				local_buffer += program.peek();
-				program.get();
-			}
+			if (isdigit(program.peek()))
+				local_buffer += program.get();
 			else {
-				if (!gramar->symbols_attributes[program.peek()]) SkipWhitespaces();
-				if (program.peek() == ')') {
-					program.get();
+				Whitespace();
+				if (program.get() == ')') {
 					buffer += local_buffer + ')';
-					return true;
+					return;
 				}
 				throw LexerError{ "Wrong right part" };
 			}
@@ -108,7 +101,7 @@ namespace Parse {
 		string buffer;
 		program.get();
 		bool error = 0;
-		if (!gramar->symbols_attributes[program.peek()]) SkipWhitespaces();
+		Whitespace();
 		try {
 			LeftPart(buffer);
 		}
@@ -116,7 +109,7 @@ namespace Parse {
 			error = true;
 			parsed_program.value().errors.emplace_back("Lexical error in " + to_string(row) + " row : " + "Wrong left part;");
 		}
-		if (!gramar->symbols_attributes[program.peek()]) SkipWhitespaces();
+		Whitespace();
 		if (program.peek() != '\'') {
 			try {
 				RightPart(buffer);
@@ -129,9 +122,9 @@ namespace Parse {
 		while (program && program.get() != '\'');
 		if (!program) throw LexerError{ "Unclosed constant;" };
 		if (error) return;
-		if(!gramar->constants.count(buffer)) gramar->constants[buffer] = gramar->constant_code++;
+		gramar->constants.try_emplace(buffer, gramar->constant_code + gramar->constants.size());
 		parsed_program.value().items.push_back({ gramar->constants[buffer], parsed_program.value().program.size() });
-		parsed_program.value().program += '\'' + buffer + '\'';
+		parsed_program.value().program += '\'' + move(buffer) + '\'';
 	}
 
 	void Lexer::Parse() {
@@ -139,19 +132,26 @@ namespace Parse {
 		parsed_program.emplace();
 		while(program.peek() != Eof) {
 			try {
-				if (!gramar->symbols_attributes[program.peek()])
+				switch (gramar->symbols_attributes[program.peek()]) {
+				case 0:
 					Whitespace();
-				else if (gramar->symbols_attributes[program.peek()] == 4)
-					Comment();
-				else if (gramar->symbols_attributes[program.peek()] == 3)
-					Delimiter();
-				else if (gramar->symbols_attributes[program.peek()] == 2)
+					break;
+				case 2:
 					KeywordOrIdentifier();
-				else if (gramar->symbols_attributes[program.peek()] == 6)
+					break;
+				case 3:
+					Delimiter();
+					break;
+				case 4:
+					Comment();
+					break;
+				case 6:
 					Constant();
-				else {
-					program.get();
+					break;
+				default:
+					program.ignore();
 					throw LexerError{ "Unknown symbol" };
+					break;
 				}
 			}
 			catch (LexerError& ex) {
@@ -160,25 +160,29 @@ namespace Parse {
 		}
 	}
 
-	const std::vector<std::string>& Lexer::Errors() const {
+	const Lexer::LexemesList &Lexer::List() const {
 		if (parsed_program.has_value())
-			return parsed_program.value().errors;
+			return parsed_program.value();
 		throw bad_optional_access();
 	}
 
-	const std::vector<Lexer::LexemesList::Item>& Lexer::Tokens() const {
+	const std::vector<std::string>& Lexer::GetErrors() const { return List().errors; }
+
+	const std::vector<Lexer::LexemesList::Item>& Lexer::GetTokens() const { return List().items; }
+
+	const std::string& Lexer::GetProgram() const { return List().program; }
+
+	Lexer::LexemesList& Lexer::List() {
 		if (parsed_program.has_value())
-			return parsed_program.value().items;
+			return parsed_program.value();
 		throw bad_optional_access();
 	}
 
-	const std::string& Lexer::Program() const {
-		if (parsed_program.has_value())
-			return parsed_program.value().program;
-		throw bad_optional_access();
-	}
+	std::vector<std::string>& Lexer::Errors() { return List().errors; }
 
+	std::vector<Lexer::LexemesList::Item>& Lexer::Tokens() { return List().items; }
 
+	std::string& Lexer::Program() { return List().program; }
 
 	bool operator==(const Lexer::LexemesList::Item& lhs, const Lexer::LexemesList::Item& rhs) {
 		if (lhs.code != rhs.code) return false;
