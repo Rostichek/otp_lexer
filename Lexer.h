@@ -21,8 +21,8 @@ namespace Parse {
 
 	struct Grammar {
 		std::unordered_map<std::string, Code> key_words;
-		std::unordered_map<std::string, Code> constants;
-		std::unordered_map<std::string, Code> identifiers;
+		std::unordered_map<std::string_view, Code> constants;
+		std::unordered_map<std::string_view, Code> identifiers;
 		std::array<size_t, 255> symbols_attributes{ 10 };
 		const Code identifier_code = 1001;
 		const Code constant_code = 501;
@@ -66,6 +66,7 @@ namespace Parse {
 		void RightPart(std::string& buffer);
 
 		size_t Position() const;
+		void InitParse();
 
 		const LexemesList& List() const;
 		std::vector<std::string>& Errors();

@@ -1,5 +1,8 @@
 #include "LexerTests.h"
 #include <sstream>
+#include <fstream>
+#include "profile.h"
+
 using namespace Parse;
 using namespace std;
 
@@ -98,7 +101,7 @@ void TestKeywordsOrIdentifiers() {
 	expect_list.push_back({ 1003, 29 });
 	expect_list.push_back({ 1002, 32 });
 
-	unordered_map<string, Code> expect_indentifiers =
+	unordered_map<string_view, Code> expect_indentifiers =
 	{
 		{"PROGRAM1", 1001},
 		{"A", 1002},
@@ -120,7 +123,7 @@ void TestConstants() {
 		vector<Lexer::LexemesList::Item> expect_list;
 		expect_list.push_back({ 501, 0 });
 		expect_list.push_back({ 502, 6 });
-		unordered_map<string, Code> expect_constants =
+		unordered_map<string_view, Code> expect_constants =
 		{
 			{R"(1020)", 501},
 			{"10$EXP(20)", 502},
@@ -141,7 +144,7 @@ void TestConstants() {
 		expect_list.push_back({ 502, 4 });
 		expect_list.push_back({ 503, 8 });
 		expect_list.push_back({ 502, 10 });
-		unordered_map<string, Code> expect_constants =
+		unordered_map<string_view, Code> expect_constants =
 		{
 			{R"(20)", 501},
 			{R"(10)", 502},
@@ -195,7 +198,7 @@ void TestProgram() {
 	expect_list.push_back({ 403, 84 });
 	ASSERT_EQUAL(lexer.GetTokens(), expect_list);
 	ASSERT_EQUAL(lexer.GetProgram(), R"(PROGRAMTEST1;CONSTVAL1='100'VAL2='4'EMPTY=''COMPLEX1='1010'COMPLEX2='10$EXP(3)'BEGINEND)");
-	unordered_map<string, Code> expect_constants =
+	unordered_map<string_view, Code> expect_constants =
 	{
 		{R"(100)", 501},
 		{R"(4)", 502},
@@ -204,7 +207,7 @@ void TestProgram() {
 		{R"(10$EXP(3))", 505},
 	};
 	ASSERT_EQUAL(grammar->constants, expect_constants);
-	unordered_map<string, Code> expect_indentifiers =
+	unordered_map<string_view, Code> expect_indentifiers =
 	{
 		{"TEST1", 1001},
 		{"VAL1", 1002},
@@ -236,6 +239,15 @@ void TestErrors() {
 	ASSERT_EQUAL(lexer.GetErrors().size(), 6);
 }
 
+//void Benchmark() {
+//	ifstream in("input.txt");
+//	Lexer lexer(CreateGrammar(), in);
+//	LOG_DURATION("Benchmark") {
+//		lexer.Parse();
+//	}
+//	in.close();
+//}
+
 void RunLexerTests(TestRunner& tr) {
 	RUN_TEST(tr, TestWhitespaces);
 	RUN_TEST(tr, TestComments);
@@ -244,4 +256,5 @@ void RunLexerTests(TestRunner& tr) {
 	RUN_TEST(tr, TestConstants);
 	RUN_TEST(tr, TestProgram);
 	RUN_TEST(tr, TestErrors);
+	//RUN_TEST(tr, Benchmark);
 }

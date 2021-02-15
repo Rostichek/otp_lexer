@@ -41,13 +41,15 @@ namespace Parse {
 			if (isalnum(next)) buffer += program.get();
 			else break;
 		}
+		size_t begin = Position();
+		Program() += buffer;
 		if (gramar->key_words.count(buffer)) 
-			Tokens().emplace_back(gramar->key_words[buffer], Position());
+			Tokens().emplace_back(gramar->key_words[buffer], begin);
 		else {
-			gramar->identifiers.try_emplace(buffer, gramar->identifier_code + gramar->identifiers.size());
-			Tokens().emplace_back(gramar->identifiers[buffer], Position());
+			gramar->identifiers.try_emplace(string_view{ &Program().c_str()[begin], buffer.size() },
+				gramar->identifier_code + gramar->identifiers.size());
+			Tokens().emplace_back(gramar->identifiers[buffer], begin);
 		}
-		parsed_program.value().program += move(buffer);
 	}
 
 	size_t Lexer::Position() const { return GetProgram().size(); }
@@ -122,14 +124,23 @@ namespace Parse {
 		while (program && program.get() != '\'');
 		if (!program) throw LexerError{ "Unclosed constant;" };
 		if (error) return;
-		gramar->constants.try_emplace(buffer, gramar->constant_code + gramar->constants.size());
-		parsed_program.value().items.push_back({ gramar->constants[buffer], parsed_program.value().program.size() });
-		parsed_program.value().program += '\'' + move(buffer) + '\'';
+		size_t begin = Position();
+		Program() += '\'' + buffer + '\'';
+		gramar->constants.try_emplace(string_view{ &Program().c_str()[begin+1], buffer.size() },
+			gramar->constant_code + gramar->constants.size());
+		Tokens().push_back({ gramar->constants[buffer], begin });
+	}
+
+	void Lexer::InitParse() {
+		parsed_program.emplace();
+		program.seekg(0, ios::end);
+		parsed_program.value().program.reserve(static_cast<size_t>(program.tellg()) + 1);
+		program.seekg(0);
 	}
 
 	void Lexer::Parse() {
 		if (parsed_program.has_value()) return;
-		parsed_program.emplace();
+		InitParse();
 		while(program.peek() != Eof) {
 			try {
 				switch (gramar->symbols_attributes[program.peek()]) {

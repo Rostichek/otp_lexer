@@ -8,6 +8,8 @@
 #include "LexerTests.h"
 #include "test_runner.h"
 
+#include "profile.h"
+
 using namespace std;
 
 void CompileProgram(istream& input, ostream& output) {
@@ -25,6 +27,7 @@ void CompileProgram(istream& input, ostream& output) {
 }
 
 int main(int argc, const char* argv[]) {
+	std::ios::sync_with_stdio(false);
 	TestRunner tr;
 	RunLexerTests(tr);
 	try {
