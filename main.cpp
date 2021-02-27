@@ -3,7 +3,9 @@
 #include <iomanip>
 #include <ostream>
 #include <string>
+#include <iomanip>
 #include <fstream>
+#include <algorithm>
 #include "Lexer.h"
 #include "LexerTests.h"
 #include "test_runner.h"
@@ -17,13 +19,16 @@ void CompileProgram(istream& input, ostream& output) {
 	lexer.Parse();
 	const auto& errors = lexer.GetErrors();	
 	if (errors.size()) {
-		cerr << errors.size() << "errors;\nErrors list:\n";
+		output << errors.size() << " errors;\nErrors list:\n";
 		for (const auto& error : errors)
-			cerr << error << endl;
+			output << error << endl;
 	}
-	output << "Lexemes list: " << endl;
-	const auto& tokens = lexer.GetTokens();
-	output << tokens;
+	else {
+		const auto& tokens = lexer.GetTokens();
+		for (const auto& token : tokens) {
+			output << setw(10) << token.position.line << setw(10) << token.position.col << setw(10) << token.code << "\t" << token.value << endl;
+		}
+	}
 }
 
 int main(int argc, const char* argv[]) {
@@ -31,9 +36,20 @@ int main(int argc, const char* argv[]) {
 	TestRunner tr;
 	RunLexerTests(tr);
 	try {
-		if (argc == 3) {
+		if (argc == 3 || argc == 2) {
 			ifstream input(argv[1]);
-			ofstream output(argv[2]);
+			ofstream output;
+			if (argc == 2) {
+				string path(argv[1]);
+				size_t it = path.find_last_of('\\');
+				if (it > path.size()) path = "generated.txt";
+				else {
+					path.resize(it);
+					path += "\\generated.txt";
+				}
+				output.open(path);
+			}
+			else output.open(argv[2]);
 			if (input.is_open() && output.is_open()) CompileProgram(input, output);
 			else throw runtime_error("Bad file path.");
 			input.close();

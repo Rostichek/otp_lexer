@@ -2,13 +2,46 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <sstream>
 
 using namespace std;
 
 namespace Parse {
+	char Reader::get() {
+		if (input.peek() == '\n') {
+			line_++;
+			col_ = 1;
+		}
+		else if (input.peek() == '\t') col_ += 4;
+		else col_++;
+		return input.get();
+	}
+
+	void Reader::ignore() {
+		get();
+	}
+
+	char Reader::peek() {
+		return input.peek();
+	}
+
+	size_t Reader::line() const { return line_; }
+
+	size_t Reader::col() const { return col_; }
+
+	size_t Reader::size() {
+		input.seekg(0, ios::end);
+		size_t size = static_cast<size_t>(input.tellg());
+		input.seekg(0);
+		return size;
+	}
+
+	Position Reader::position() const { return { line_, col_ }; }
+
 	void Lexer::Whitespace() {
-		while (!gramar->symbols_attributes[program.peek()]) {
-			if (program.peek() == '\n') row++;
+		char next;
+		while (!gramar->symbols_attributes[next = program.peek()]) {
+			if (next == '\n') row++;
 			program.ignore();
 			if (program.peek() == Eof) break;
 		}
@@ -16,7 +49,7 @@ namespace Parse {
 
 	void Lexer::Comment() {
 		program.ignore();
-		if (program.peek() != '*') throw LexerError{ "Unopened comment;" };
+		if (program.peek() != '*') ThrowErr("Unopened comment");
 		bool met_an_asterisk = false;
 		char next;
 		while (program) {
@@ -25,15 +58,18 @@ namespace Parse {
 				return;
 			met_an_asterisk = (next == '*');
 		}
-		throw LexerError{ "Unclosed comment;" };
+		ThrowErr("Unclosed comment");
 	}
 
 	void Lexer::Delimiter() {
-		Tokens().emplace_back(static_cast<Code>(program.peek()), Position());
+		auto begin = program.position();
+		size_t pos = Position();
 		Program() += program.get();
+		Tokens().emplace_back(static_cast<Code>(Program().back()), begin, string_view{ &Program().c_str()[pos], 1 });
 	}
 
 	void Lexer::KeywordOrIdentifier() {
+		auto begin = program.position();
 		string buffer;
 		char next;
 		while (program) {
@@ -41,14 +77,14 @@ namespace Parse {
 			if (isalnum(next)) buffer += program.get();
 			else break;
 		}
-		size_t begin = Position();
+		size_t pos = Position();
 		Program() += buffer;
 		if (gramar->key_words.count(buffer)) 
-			Tokens().emplace_back(gramar->key_words[buffer], begin);
+			Tokens().emplace_back(gramar->key_words[buffer], begin, string_view{ &Program().c_str()[pos], buffer.size() });
 		else {
-			gramar->identifiers.try_emplace(string_view{ &Program().c_str()[begin], buffer.size() },
+			gramar->identifiers.try_emplace(string_view{ &Program().c_str()[pos], buffer.size() },
 				gramar->identifier_code + gramar->identifiers.size());
-			Tokens().emplace_back(gramar->identifiers[buffer], begin);
+			Tokens().emplace_back(gramar->identifiers[buffer], begin, string_view{ &Program().c_str()[pos], buffer.size() });
 		}
 	}
 
@@ -63,7 +99,7 @@ namespace Parse {
 			else {
 				char next = program.peek();
 				if (!gramar->symbols_attributes[next] || next == '\'') return;
-				throw LexerError{ "Wrong left part" };
+				ThrowErr("Wrong left part");
 			}
 		}
 	}
@@ -78,7 +114,7 @@ namespace Parse {
 			if (program.peek() == '(') {
 				program.ignore();
 				if (local_buffer != "$EXP") 
-					throw LexerError{""};
+					ThrowErr("Wrong right part : unknown word " + local_buffer);
 				local_buffer += '(';
 				break;
 			}
@@ -90,16 +126,27 @@ namespace Parse {
 				local_buffer += program.get();
 			else {
 				Whitespace();
-				if (program.get() == ')') {
+				if (program.peek() == ')') {
 					buffer += local_buffer + ')';
+					program.ignore();
 					return;
 				}
-				throw LexerError{ "Wrong right part" };
+				ThrowErr("Wrong right part : unclosed exponent body");
 			}
 		}
 	}
 
+	void Lexer::AddErr(std::string&& msg) {
+		Errors().emplace_back(msg);
+	}
+
+	void Lexer::ThrowErr(std::string&& msg) {
+		throw LexerError{ "Lexer: Error (line " + to_string(program.line()) +
+			", col " + to_string(program.col() - 1) + ") : " + msg + ";" };
+	}
+
 	void Lexer::Constant() {
+		auto begin = program.position();
 		string buffer;
 		program.get();
 		bool error = 0;
@@ -109,41 +156,36 @@ namespace Parse {
 		}
 		catch (LexerError& ex) {
 			error = true;
-			parsed_program.value().errors.emplace_back("Lexical error in " + to_string(row) + " row : " + "Wrong left part;");
+			AddErr(ex.what());
 		}
 		Whitespace();
-		if (program.peek() != '\'') {
+		if (program.peek() != '\'' && !error) {
 			try {
 				RightPart(buffer);
 			}
 			catch (LexerError& ex) {
 				error = true;
-				parsed_program.value().errors.emplace_back("Lexical error in " + to_string(row) + " row : " + "Wrong right part;");
+				AddErr(ex.what());
 			}
 		}
 		while (program && program.get() != '\'');
-		if (!program) throw LexerError{ "Unclosed constant;" };
+		if (!program) ThrowErr("Unclosed constant");
 		if (error) return;
-		size_t begin = Position();
+		size_t pos = Position();
 		Program() += '\'' + buffer + '\'';
-		gramar->constants.try_emplace(string_view{ &Program().c_str()[begin+1], buffer.size() },
+		gramar->constants.try_emplace(string_view{ &Program().c_str()[pos+1], buffer.size() },
 			gramar->constant_code + gramar->constants.size());
-		Tokens().push_back({ gramar->constants[buffer], begin });
-	}
-
-	void Lexer::InitParse() {
-		parsed_program.emplace();
-		program.seekg(0, ios::end);
-		parsed_program.value().program.reserve(static_cast<size_t>(program.tellg()) + 1);
-		program.seekg(0);
+		Tokens().emplace_back(gramar->constants[buffer], begin, string_view{ &Program().c_str()[pos], buffer.size()+2 });
 	}
 
 	void Lexer::Parse() {
 		if (parsed_program.has_value()) return;
-		InitParse();
+		parsed_program.emplace();
+		Program().reserve(program.size() + 1);
 		while(program.peek() != Eof) {
+			char next = program.peek();
 			try {
-				switch (gramar->symbols_attributes[program.peek()]) {
+				switch (gramar->symbols_attributes[next]) {
 				case 0:
 					Whitespace();
 					break;
@@ -161,12 +203,13 @@ namespace Parse {
 					break;
 				default:
 					program.ignore();
-					throw LexerError{ "Unknown symbol" };
-					break;
+					stringstream out;
+					out << "Illegal symbol \'" << next << "\'";
+					ThrowErr(out.str());
 				}
 			}
 			catch (LexerError& ex) {
-				parsed_program.value().errors.emplace_back("Lexical error in " + to_string(row) + " row : " + ex.what());
+				AddErr(ex.what());
 			}
 		}
 	}
@@ -219,6 +262,19 @@ namespace Parse {
 
 	std::ostream& operator<<(std::ostream& os, const Lexer::LexemesList::Item& item) {
 		os << item.code << " on position " << item.position;
+		return os;
+	}
+
+	bool operator== (const Position& lhs, const Position& rhs) {
+		return tie(lhs.line, lhs.col) == tie(rhs.line, rhs.col);
+	}
+
+	bool operator!= (const Position& lhs, const Position& rhs) {
+		return !(lhs == rhs);
+	}
+
+	ostream& operator<< (ostream& os, const Position& elem) {
+		os << "[" << elem.line << "; " << elem.col << "]";
 		return os;
 	}
 }

@@ -14,6 +14,16 @@ namespace Parse {
 	using Code = size_t;
 	const int Eof = std::istream::traits_type::eof();
 
+	struct Position {
+		size_t line;
+		size_t col;
+	};
+
+	bool operator== (const Position& lhs, const Position& rhs);
+	bool operator!= (const Position& lhs, const Position& rhs);
+	std::ostream& operator<< (std::ostream& os, const Position& elem);
+
+
 	class LexerError : public std::runtime_error {
 	public:
 		using std::runtime_error::runtime_error;
@@ -28,14 +38,43 @@ namespace Parse {
 		const Code constant_code = 501;
 	};
 
+	class Reader {
+	public:
+		Reader(std::istream& input) : input(input) {}
+
+		operator Reader() {
+			return input;
+		}
+
+		operator bool() {
+			return static_cast<bool>(input);
+		}
+
+		char get();
+		void ignore();
+		char peek();
+		size_t size();
+
+		size_t line() const;
+		size_t col() const;
+
+		Position position() const;
+	private:
+		std::istream& input;
+		size_t line_ = 1;
+		size_t col_ = 1;
+	};
+
 	class Lexer {
 	public:
 		struct LexemesList {
 			struct Item {
-				Item(Code code, size_t position) : code(code), position(position) {};
+				Item(Code code, Position position, std::string_view value) : code(code), position(position), value(value) {}
+				Item(Code code, Position position) : code(code), position(position) {}
 				Item() = default;
 				Code code;
-				size_t position;
+				Position position;
+				std::string_view value;
 			};
 			std::vector<Item> items;
 			std::string program;
@@ -52,7 +91,7 @@ namespace Parse {
 
 	private:
 		std::shared_ptr<Grammar> gramar;
-		std::istream& program;
+		Reader program;
 		std::optional<LexemesList> parsed_program;
 		size_t row = 0;
 
@@ -66,13 +105,14 @@ namespace Parse {
 		void RightPart(std::string& buffer);
 
 		size_t Position() const;
-		void InitParse();
 
 		const LexemesList& List() const;
 		std::vector<std::string>& Errors();
 		std::vector<LexemesList::Item>& Tokens();
 		std::string& Program();
 		LexemesList& List();
+		void ThrowErr(std::string&& msg);
+		void AddErr(std::string&& msg);
 	};
 
 	std::ostream& operator<<(std::ostream& os, const Lexer::LexemesList& list);

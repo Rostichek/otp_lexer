@@ -32,56 +32,57 @@ shared_ptr<Grammar> CreateGrammar() {
 
 void TestWhitespaces() {
 	stringstream program;
-	program << "                PROGRAM    \r         \n\nBEGIN   \t   END         ";
+	program << "                PROGRAM             \n\nBEGIN   \t   END         ";
 	Lexer lexer(CreateGrammar(), program);
 	lexer.Parse();
-	vector<Lexer::LexemesList::Item> expect_list;
-	expect_list.push_back({ 401, 0 });
-	expect_list.push_back({ 402, 7 });
-	expect_list.push_back({ 403, 12 });
+	vector<Lexer::LexemesList::Item> expected_list;
+	expected_list.push_back({ 401, Position{1,17} });
+	expected_list.push_back({ 402, Position{3,1} });
+	expected_list.push_back({ 403, Position{3,16} });
 	ASSERT_EQUAL(lexer.GetProgram(), "PROGRAMBEGINEND");
-	ASSERT_EQUAL(lexer.GetTokens(), expect_list);
+	ASSERT_EQUAL(lexer.GetTokens(), expected_list);
 }
 
 void TestComments() {
 	{
 		stringstream program;
-		program << "(**************)PROGRAM(**ssssssssss*ssssss*)\nBEGIN(**)\nEND(*comment\nAcomment*)";
+		program << "(**************)PROGRAM(**ssssss__ssss*ssssss*)\nBEGIN(**)\nEND(*comment\nAcomment*)";
 		Lexer lexer(CreateGrammar(), program);
 		lexer.Parse();
-		vector<Lexer::LexemesList::Item> expect_list;
-		expect_list.push_back({ 401, 0 });
-		expect_list.push_back({ 402, 7 });
-		expect_list.push_back({ 403, 12 });
+		vector<Lexer::LexemesList::Item> expected_list;
+		expected_list.push_back({ 401, Position{1,17} });
+		expected_list.push_back({ 402, Position{2,1} });
+		expected_list.push_back({ 403, Position{3,1} });
 		ASSERT_EQUAL(lexer.GetProgram(), "PROGRAMBEGINEND");
-		ASSERT_EQUAL(lexer.GetTokens(), expect_list);
+		ASSERT_EQUAL(lexer.GetTokens(), expected_list);
 	}
 	{
 		stringstream program;
 		program << "(**************)PROGRAM(**ssssssssss*ssssss*)\nBEGIN(**)\nEND(*comment\nAcomment";
 		Lexer lexer(CreateGrammar(), program);
 		lexer.Parse();
-		vector<Lexer::LexemesList::Item> expect_list;
-		expect_list.push_back({ 401, 0 });
-		expect_list.push_back({ 402, 7 });
-		expect_list.push_back({ 403, 12 });
+		vector<Lexer::LexemesList::Item> expected_list;
+		expected_list.push_back({ 401, Position{1,17} });
+		expected_list.push_back({ 402, Position{2,1} });
+		expected_list.push_back({ 403, Position{3,1} });
 		ASSERT_EQUAL(lexer.GetProgram(), "PROGRAMBEGINEND");
-		ASSERT_EQUAL(lexer.GetTokens(), expect_list);
+		ASSERT_EQUAL(lexer.GetTokens(), expected_list);
 		ASSERT_EQUAL(lexer.GetErrors().size(), 1);
 	}
 }
 
 void TestDelimiters() {
 	stringstream program;
-	program << ";=";
+	program << ";==";
 	Lexer lexer(CreateGrammar(), program);
 	lexer.Parse();
 	ASSERT(lexer.GetErrors().empty());
-	vector<Lexer::LexemesList::Item> expect_list;
-	expect_list.push_back({ ';', 0 });
-	expect_list.push_back({ '=', 1 });
-	ASSERT_EQUAL(lexer.GetTokens(), expect_list);
-	ASSERT_EQUAL(lexer.GetProgram(), ";=");
+	vector<Lexer::LexemesList::Item> expected_list;
+	expected_list.push_back({ ';', Position{1,1} });
+	expected_list.push_back({ '=', Position{1,2} });
+	expected_list.push_back({ '=', Position{1,3} });
+	ASSERT_EQUAL(lexer.GetTokens(), expected_list);
+	ASSERT_EQUAL(lexer.GetProgram(), ";==");
 }
 
 void TestKeywordsOrIdentifiers() {
@@ -91,24 +92,24 @@ void TestKeywordsOrIdentifiers() {
 	Lexer lexer(grammar, program);
 	lexer.Parse();
 	ASSERT(lexer.GetErrors().empty());
-	vector<Lexer::LexemesList::Item> expect_list;
-	expect_list.push_back({ 401, 0 });
-	expect_list.push_back({ 402, 7 });
-	expect_list.push_back({ 403, 12 });
-	expect_list.push_back({ 404, 15 });
-	expect_list.push_back({ 1001, 20 });
-	expect_list.push_back({ 1002, 28 });
-	expect_list.push_back({ 1003, 29 });
-	expect_list.push_back({ 1002, 32 });
+	vector<Lexer::LexemesList::Item> expected_list;
+	expected_list.push_back({ 401, Position{1,1} });
+	expected_list.push_back({ 402, Position{1,16} });
+	expected_list.push_back({ 403, Position{1,24} });
+	expected_list.push_back({ 404, Position{1,31} });
+	expected_list.push_back({ 1001, Position{1,37} });
+	expected_list.push_back({ 1002, Position{1,49} });
+	expected_list.push_back({ 1003, Position{1,51} });
+	expected_list.push_back({ 1002, Position{1,56} });
 
-	unordered_map<string_view, Code> expect_indentifiers =
+	unordered_map<string_view, Code> expected_indentifiers =
 	{
 		{"PROGRAM1", 1001},
 		{"A", 1002},
 		{"ENB", 1003}
 	};
-	ASSERT_EQUAL(grammar->identifiers, expect_indentifiers);
-	ASSERT_EQUAL(lexer.GetTokens(), expect_list);
+	ASSERT_EQUAL(grammar->identifiers, expected_indentifiers);
+	ASSERT_EQUAL(lexer.GetTokens(), expected_list);
 	ASSERT_EQUAL(lexer.GetProgram(), "PROGRAMBEGINENDCONSTPROGRAM1AENBA");
 }
 
@@ -120,16 +121,16 @@ void TestConstants() {
 		Lexer lexer(grammar, program);
 		lexer.Parse();
 		ASSERT(lexer.GetErrors().empty());
-		vector<Lexer::LexemesList::Item> expect_list;
-		expect_list.push_back({ 501, 0 });
-		expect_list.push_back({ 502, 6 });
-		unordered_map<string_view, Code> expect_constants =
+		vector<Lexer::LexemesList::Item> expected_list;
+		expected_list.push_back({ 501, Position{1,1} });
+		expected_list.push_back({ 502, Position{1,19} });
+		unordered_map<string_view, Code> expected_constants =
 		{
 			{R"(1020)", 501},
 			{"10$EXP(20)", 502},
 		};
-		ASSERT_EQUAL(grammar->constants, expect_constants);
-		ASSERT_EQUAL(lexer.GetTokens(), expect_list);
+		ASSERT_EQUAL(grammar->constants, expected_constants);
+		ASSERT_EQUAL(lexer.GetTokens(), expected_list);
 		ASSERT_EQUAL(lexer.GetProgram(), R"('1020''10$EXP(20)')");
 	}
 	{
@@ -139,19 +140,19 @@ void TestConstants() {
 		Lexer lexer(grammar, program);
 		lexer.Parse();
 		ASSERT(lexer.GetErrors().empty());
-		vector<Lexer::LexemesList::Item> expect_list;
-		expect_list.push_back({ 501, 0 });
-		expect_list.push_back({ 502, 4 });
-		expect_list.push_back({ 503, 8 });
-		expect_list.push_back({ 502, 10 });
-		unordered_map<string_view, Code> expect_constants =
+		vector<Lexer::LexemesList::Item> expected_list;
+		expected_list.push_back({ 501, Position{1,1} });
+		expected_list.push_back({ 502, Position{1,8} });
+		expected_list.push_back({ 503, Position{1,15} });
+		expected_list.push_back({ 502, Position{1,18} });
+		unordered_map<string_view, Code> expected_constants =
 		{
 			{R"(20)", 501},
 			{R"(10)", 502},
 			{R"()", 503}
 		};
-		ASSERT_EQUAL(grammar->constants, expect_constants);
-		ASSERT_EQUAL(lexer.GetTokens(), expect_list);
+		ASSERT_EQUAL(grammar->constants, expected_constants);
+		ASSERT_EQUAL(lexer.GetTokens(), expected_list);
 		ASSERT_EQUAL(lexer.GetProgram(), R"('20''10''''10')");
 	}
 }
@@ -174,31 +175,31 @@ void TestProgram() {
 	Lexer lexer(grammar, program);
 	lexer.Parse();
 	ASSERT(lexer.GetErrors().empty());
-	vector<Lexer::LexemesList::Item> expect_list;
-	expect_list.push_back({ 401, 0 });
-	expect_list.push_back({ 1001, 7 });
-	expect_list.push_back({ 59, 12 });
-	expect_list.push_back({ 404, 13 });
-	expect_list.push_back({ 1002, 18 });
-	expect_list.push_back({ 61, 22 });
-	expect_list.push_back({ 501, 23 });
-	expect_list.push_back({ 1003, 28 });
-	expect_list.push_back({ 61, 32 });
-	expect_list.push_back({ 502, 33 });
-	expect_list.push_back({ 1004, 36 });
-	expect_list.push_back({ 61, 41 });
-	expect_list.push_back({ 503, 42 });
-	expect_list.push_back({ 1005, 44 });
-	expect_list.push_back({ 61, 52 });
-	expect_list.push_back({ 504, 53 });
-	expect_list.push_back({ 1006, 59 });
-	expect_list.push_back({ 61, 67 });
-	expect_list.push_back({ 505, 68 });
-	expect_list.push_back({ 402, 79 });
-	expect_list.push_back({ 403, 84 });
-	ASSERT_EQUAL(lexer.GetTokens(), expect_list);
+	vector<Lexer::LexemesList::Item> expected_list;
+	expected_list.push_back({ 401, Position{2,9} });
+	expected_list.push_back({ 1001, Position{2,17} });
+	expected_list.push_back({ 59, Position{2,22} });
+	expected_list.push_back({ 404, Position{3,9} });
+	expected_list.push_back({ 1002, Position{4,13} });
+	expected_list.push_back({ 61, Position{4,18} });
+	expected_list.push_back({ 501, Position{4,20} });
+	expected_list.push_back({ 1003, Position{5,13} });
+	expected_list.push_back({ 61, Position{5,18} });
+	expected_list.push_back({ 502, Position{5,20} });
+	expected_list.push_back({ 1004, Position{6,13} });
+	expected_list.push_back({ 61, Position{6,19} });
+	expected_list.push_back({ 503, Position{6,21} });
+	expected_list.push_back({ 1005, Position{7,13} });
+	expected_list.push_back({ 61, Position{7,22} });
+	expected_list.push_back({ 504, Position{7,24} });
+	expected_list.push_back({ 1006, Position{8,13} });
+	expected_list.push_back({ 61, Position{8,22} });
+	expected_list.push_back({ 505, Position{8,24} });
+	expected_list.push_back({ 402, Position{9,9} });
+	expected_list.push_back({ 403, Position{11,9} });
+	ASSERT_EQUAL(lexer.GetTokens(), expected_list);
 	ASSERT_EQUAL(lexer.GetProgram(), R"(PROGRAMTEST1;CONSTVAL1='100'VAL2='4'EMPTY=''COMPLEX1='1010'COMPLEX2='10$EXP(3)'BEGINEND)");
-	unordered_map<string_view, Code> expect_constants =
+	unordered_map<string_view, Code> expected_constants =
 	{
 		{R"(100)", 501},
 		{R"(4)", 502},
@@ -206,8 +207,8 @@ void TestProgram() {
 		{R"(1010)", 504},
 		{R"(10$EXP(3))", 505},
 	};
-	ASSERT_EQUAL(grammar->constants, expect_constants);
-	unordered_map<string_view, Code> expect_indentifiers =
+	ASSERT_EQUAL(grammar->constants, expected_constants);
+	unordered_map<string_view, Code> expected_indentifiers =
 	{
 		{"TEST1", 1001},
 		{"VAL1", 1002},
@@ -216,7 +217,7 @@ void TestProgram() {
 		{"COMPLEX1", 1005},
 		{"COMPLEX2", 1006},
 	};
-	ASSERT_EQUAL(grammar->identifiers, expect_indentifiers);
+	ASSERT_EQUAL(grammar->identifiers, expected_indentifiers);
 }
 
 void TestErrors() {
@@ -239,15 +240,6 @@ void TestErrors() {
 	ASSERT_EQUAL(lexer.GetErrors().size(), 6);
 }
 
-//void Benchmark() {
-//	ifstream in("input.txt");
-//	Lexer lexer(CreateGrammar(), in);
-//	LOG_DURATION("Benchmark") {
-//		lexer.Parse();
-//	}
-//	in.close();
-//}
-
 void RunLexerTests(TestRunner& tr) {
 	RUN_TEST(tr, TestWhitespaces);
 	RUN_TEST(tr, TestComments);
@@ -256,5 +248,4 @@ void RunLexerTests(TestRunner& tr) {
 	RUN_TEST(tr, TestConstants);
 	RUN_TEST(tr, TestProgram);
 	RUN_TEST(tr, TestErrors);
-	//RUN_TEST(tr, Benchmark);
 }
