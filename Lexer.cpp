@@ -12,7 +12,7 @@ namespace Parse {
 			line_++;
 			col_ = 1;
 		}
-		else if (input.peek() == '\t') col_ += 4;
+		else if (input.peek() == '\t') col_ += TAB_SIZE;
 		else col_++;
 		return input.get();
 	}
@@ -28,13 +28,6 @@ namespace Parse {
 	size_t Reader::line() const { return line_; }
 
 	size_t Reader::col() const { return col_; }
-
-	size_t Reader::size() {
-		input.seekg(0, ios::end);
-		size_t size = static_cast<size_t>(input.tellg());
-		input.seekg(0);
-		return size;
-	}
 
 	Position Reader::position() const { return { line_, col_ }; }
 
@@ -63,9 +56,7 @@ namespace Parse {
 
 	void Lexer::Delimiter() {
 		auto begin = program.position();
-		size_t pos = Position();
-		Program() += program.get();
-		Tokens().emplace_back(static_cast<Code>(Program().back()), begin, string_view{ &Program().c_str()[pos], 1 });
+		Tokens().emplace_back(static_cast<Code>(program.get()), begin);
 	}
 
 	void Lexer::KeywordOrIdentifier() {
@@ -77,18 +68,15 @@ namespace Parse {
 			if (isalnum(next)) buffer += program.get();
 			else break;
 		}
-		size_t pos = Position();
-		Program() += buffer;
-		if (gramar->key_words.count(buffer)) 
-			Tokens().emplace_back(gramar->key_words[buffer], begin, string_view{ &Program().c_str()[pos], buffer.size() });
+		if (gramar->key_words.count(buffer)) {
+			Tokens().emplace_back(gramar->key_words[buffer], begin, gramar->key_words.find(buffer)->first);
+		}
 		else {
-			gramar->identifiers.try_emplace(string_view{ &Program().c_str()[pos], buffer.size() },
+			gramar->identifiers.try_emplace(buffer,
 				gramar->identifier_code + gramar->identifiers.size());
-			Tokens().emplace_back(gramar->identifiers[buffer], begin, string_view{ &Program().c_str()[pos], buffer.size() });
+			Tokens().emplace_back(gramar->identifiers[buffer], begin, gramar->identifiers.find(buffer)->first);
 		}
 	}
-
-	size_t Lexer::Position() const { return GetProgram().size(); }
 
 	void Lexer::LeftPart(string& buffer) {
 		while (program) {
@@ -147,12 +135,13 @@ namespace Parse {
 
 	void Lexer::Constant() {
 		auto begin = program.position();
-		string buffer;
+		string left;
+		string right;
 		program.get();
 		bool error = 0;
 		Whitespace();
 		try {
-			LeftPart(buffer);
+			LeftPart(left);
 		}
 		catch (LexerError& ex) {
 			error = true;
@@ -161,7 +150,7 @@ namespace Parse {
 		Whitespace();
 		if (program.peek() != '\'' && !error) {
 			try {
-				RightPart(buffer);
+				RightPart(right);
 			}
 			catch (LexerError& ex) {
 				error = true;
@@ -171,17 +160,16 @@ namespace Parse {
 		while (program && program.get() != '\'');
 		if (!program) ThrowErr("Unclosed constant");
 		if (error) return;
-		size_t pos = Position();
-		Program() += '\'' + buffer + '\'';
-		gramar->constants.try_emplace(string_view{ &Program().c_str()[pos+1], buffer.size() },
+		if (right.size()) left += ' ';
+		string buffer = '\'' + left + right + '\'';
+		gramar->constants.try_emplace(buffer,
 			gramar->constant_code + gramar->constants.size());
-		Tokens().emplace_back(gramar->constants[buffer], begin, string_view{ &Program().c_str()[pos], buffer.size()+2 });
+		Tokens().emplace_back(gramar->constants[buffer], begin, gramar->constants.find(buffer)->first);
 	}
-
+	
 	void Lexer::Parse() {
 		if (parsed_program.has_value()) return;
 		parsed_program.emplace();
-		Program().reserve(program.size() + 1);
 		while(program.peek() != Eof) {
 			char next = program.peek();
 			try {
@@ -224,8 +212,6 @@ namespace Parse {
 
 	const std::vector<Lexer::LexemesList::Item>& Lexer::GetTokens() const { return List().items; }
 
-	const std::string& Lexer::GetProgram() const { return List().program; }
-
 	Lexer::LexemesList& Lexer::List() {
 		if (parsed_program.has_value())
 			return parsed_program.value();
@@ -236,8 +222,6 @@ namespace Parse {
 
 	std::vector<Lexer::LexemesList::Item>& Lexer::Tokens() { return List().items; }
 
-	std::string& Lexer::Program() { return List().program; }
-
 	bool operator==(const Lexer::LexemesList::Item& lhs, const Lexer::LexemesList::Item& rhs) {
 		if (lhs.code != rhs.code) return false;
 		if (lhs.position != rhs.position) return false;
@@ -246,7 +230,6 @@ namespace Parse {
 
 	bool operator==(const Lexer::LexemesList& lhs, const Lexer::LexemesList& rhs) {
 		if (lhs.items != rhs.items) return false;
-		if (lhs.program != rhs.program) return false;
 		return true;
 	}
 

@@ -10,6 +10,8 @@
 #include <optional>
 #include <exception>
 
+#define TAB_SIZE 4
+
 namespace Parse {
 	using Code = size_t;
 	const int Eof = std::istream::traits_type::eof();
@@ -31,8 +33,9 @@ namespace Parse {
 
 	struct Grammar {
 		std::unordered_map<std::string, Code> key_words;
-		std::unordered_map<std::string_view, Code> constants;
-		std::unordered_map<std::string_view, Code> identifiers;
+		std::unordered_map<std::string, Code> constants;
+		std::unordered_map<std::string, Code> identifiers;
+		std::unordered_map<Code, std::string> tokens_value;
 		std::array<size_t, 255> symbols_attributes{ 10 };
 		const Code identifier_code = 1001;
 		const Code constant_code = 501;
@@ -53,7 +56,6 @@ namespace Parse {
 		char get();
 		void ignore();
 		char peek();
-		size_t size();
 
 		size_t line() const;
 		size_t col() const;
@@ -75,9 +77,9 @@ namespace Parse {
 				Code code;
 				Position position;
 				std::string_view value;
+
 			};
 			std::vector<Item> items;
-			std::string program;
 			std::vector<std::string> errors;
 		};
 
@@ -87,7 +89,6 @@ namespace Parse {
 
 		const std::vector<std::string>& GetErrors() const;
 		const std::vector<LexemesList::Item>& GetTokens() const;
-		const std::string& GetProgram() const;
 
 	private:
 		std::shared_ptr<Grammar> gramar;
@@ -109,7 +110,6 @@ namespace Parse {
 		const LexemesList& List() const;
 		std::vector<std::string>& Errors();
 		std::vector<LexemesList::Item>& Tokens();
-		std::string& Program();
 		LexemesList& List();
 		void ThrowErr(std::string&& msg);
 		void AddErr(std::string&& msg);

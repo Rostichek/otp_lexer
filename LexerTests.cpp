@@ -39,7 +39,6 @@ void TestWhitespaces() {
 	expected_list.push_back({ 401, Position{1,17} });
 	expected_list.push_back({ 402, Position{3,1} });
 	expected_list.push_back({ 403, Position{3,16} });
-	ASSERT_EQUAL(lexer.GetProgram(), "PROGRAMBEGINEND");
 	ASSERT_EQUAL(lexer.GetTokens(), expected_list);
 }
 
@@ -53,7 +52,6 @@ void TestComments() {
 		expected_list.push_back({ 401, Position{1,17} });
 		expected_list.push_back({ 402, Position{2,1} });
 		expected_list.push_back({ 403, Position{3,1} });
-		ASSERT_EQUAL(lexer.GetProgram(), "PROGRAMBEGINEND");
 		ASSERT_EQUAL(lexer.GetTokens(), expected_list);
 	}
 	{
@@ -65,7 +63,6 @@ void TestComments() {
 		expected_list.push_back({ 401, Position{1,17} });
 		expected_list.push_back({ 402, Position{2,1} });
 		expected_list.push_back({ 403, Position{3,1} });
-		ASSERT_EQUAL(lexer.GetProgram(), "PROGRAMBEGINEND");
 		ASSERT_EQUAL(lexer.GetTokens(), expected_list);
 		ASSERT_EQUAL(lexer.GetErrors().size(), 1);
 	}
@@ -82,7 +79,6 @@ void TestDelimiters() {
 	expected_list.push_back({ '=', Position{1,2} });
 	expected_list.push_back({ '=', Position{1,3} });
 	ASSERT_EQUAL(lexer.GetTokens(), expected_list);
-	ASSERT_EQUAL(lexer.GetProgram(), ";==");
 }
 
 void TestKeywordsOrIdentifiers() {
@@ -102,7 +98,7 @@ void TestKeywordsOrIdentifiers() {
 	expected_list.push_back({ 1003, Position{1,51} });
 	expected_list.push_back({ 1002, Position{1,56} });
 
-	unordered_map<string_view, Code> expected_indentifiers =
+	unordered_map<string, Code> expected_indentifiers =
 	{
 		{"PROGRAM1", 1001},
 		{"A", 1002},
@@ -110,7 +106,6 @@ void TestKeywordsOrIdentifiers() {
 	};
 	ASSERT_EQUAL(grammar->identifiers, expected_indentifiers);
 	ASSERT_EQUAL(lexer.GetTokens(), expected_list);
-	ASSERT_EQUAL(lexer.GetProgram(), "PROGRAMBEGINENDCONSTPROGRAM1AENBA");
 }
 
 void TestConstants() {
@@ -124,14 +119,13 @@ void TestConstants() {
 		vector<Lexer::LexemesList::Item> expected_list;
 		expected_list.push_back({ 501, Position{1,1} });
 		expected_list.push_back({ 502, Position{1,19} });
-		unordered_map<string_view, Code> expected_constants =
+		unordered_map<string, Code> expected_constants =
 		{
-			{R"(1020)", 501},
-			{"10$EXP(20)", 502},
+			{R"('10 20')", 501},
+			{"'10 $EXP(20)'", 502},
 		};
 		ASSERT_EQUAL(grammar->constants, expected_constants);
 		ASSERT_EQUAL(lexer.GetTokens(), expected_list);
-		ASSERT_EQUAL(lexer.GetProgram(), R"('1020''10$EXP(20)')");
 	}
 	{
 		stringstream program;
@@ -145,15 +139,14 @@ void TestConstants() {
 		expected_list.push_back({ 502, Position{1,8} });
 		expected_list.push_back({ 503, Position{1,15} });
 		expected_list.push_back({ 502, Position{1,18} });
-		unordered_map<string_view, Code> expected_constants =
+		unordered_map<string, Code> expected_constants =
 		{
-			{R"(20)", 501},
-			{R"(10)", 502},
-			{R"()", 503}
+			{R"('20')", 501},
+			{R"('10')", 502},
+			{R"('')", 503}
 		};
 		ASSERT_EQUAL(grammar->constants, expected_constants);
 		ASSERT_EQUAL(lexer.GetTokens(), expected_list);
-		ASSERT_EQUAL(lexer.GetProgram(), R"('20''10''''10')");
 	}
 }
 
@@ -198,17 +191,16 @@ void TestProgram() {
 	expected_list.push_back({ 402, Position{9,9} });
 	expected_list.push_back({ 403, Position{11,9} });
 	ASSERT_EQUAL(lexer.GetTokens(), expected_list);
-	ASSERT_EQUAL(lexer.GetProgram(), R"(PROGRAMTEST1;CONSTVAL1='100'VAL2='4'EMPTY=''COMPLEX1='1010'COMPLEX2='10$EXP(3)'BEGINEND)");
-	unordered_map<string_view, Code> expected_constants =
+	unordered_map<string, Code> expected_constants =
 	{
-		{R"(100)", 501},
-		{R"(4)", 502},
-		{R"()", 503},
-		{R"(1010)", 504},
-		{R"(10$EXP(3))", 505},
+		{R"('100')", 501},
+		{R"('4')", 502},
+		{R"('')", 503},
+		{R"('10 10')", 504},
+		{R"('10 $EXP(3)')", 505},
 	};
 	ASSERT_EQUAL(grammar->constants, expected_constants);
-	unordered_map<string_view, Code> expected_indentifiers =
+	unordered_map<string, Code> expected_indentifiers =
 	{
 		{"TEST1", 1001},
 		{"VAL1", 1002},

@@ -1,0 +1,8 @@
+         1         1       401	PROGRAM
+         1        16       402	BEGIN
+         1        24       403	END
+         1        31       404	CONST
+         1        37      1001	PROGRAM1
+         1        49      1002	A
+         1        51      1003	ENB
+         1        56      1002	A

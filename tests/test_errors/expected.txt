@@ -1,0 +1,9 @@
+7 errors;
+Errors list:
+Lexer: Error (line 4, col 16) : Illegal symbol '_';
+Lexer: Error (line 4, col 17) : Illegal symbol '1';
+Lexer: Error (line 6, col 13) : Illegal symbol '1';
+Lexer: Error (line 7, col 32) : Wrong right part : unknown word &EXP;
+Lexer: Error (line 9, col 33) : Wrong right part : unclosed exponent body;
+Lexer: Error (line 10, col 25) : Wrong left part;
+Lexer: Error (line 14, col 5) : Unclosed comment;
