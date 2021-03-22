@@ -1,0 +1,6 @@
+PROGRAM TEST; 
+	CONST
+		A = '1 1';	
+	BEGIN
+			
+	END.

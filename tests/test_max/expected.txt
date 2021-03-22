@@ -1,0 +1,62 @@
+<signal_program>
+..<program>
+....401 PROGRAM
+....<procedure-identifier>
+......<identifier>
+........1001 TEST1
+....59 ;
+....<block>
+......<declarations>
+........<constant-declarations>
+..........404 CONST
+..........<constant-declarations-list>
+............<constant-declaration>
+..............<constant-identifier>
+................<identifier>
+..................1002 VAL1
+..............61 =
+..............<constant>
+................501 '100'
+..............59 ;
+............<constant-declarations-list>
+..............<constant-declaration>
+................<constant-identifier>
+..................<identifier>
+....................1003 VAL2
+................61 =
+................<constant>
+..................502 '4'
+................59 ;
+..............<constant-declarations-list>
+................<constant-declaration>
+..................<constant-identifier>
+....................<identifier>
+......................1004 EMPTY
+..................61 =
+..................<constant>
+....................503 ''
+..................59 ;
+................<constant-declarations-list>
+..................<constant-declaration>
+....................<constant-identifier>
+......................<identifier>
+........................1005 COMPLEX1
+....................61 =
+....................<constant>
+......................504 '10 10'
+....................59 ;
+..................<constant-declarations-list>
+....................<constant-declaration>
+......................<constant-identifier>
+........................<identifier>
+..........................1006 COMPLEX2
+......................61 =
+......................<constant>
+........................505 '10 $EXP(3)'
+......................59 ;
+....................<empty>
+......402 BEGIN
+......<statements-list>
+........<empty>
+......403 END
+....46 .

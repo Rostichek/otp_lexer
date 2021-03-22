@@ -7,49 +7,62 @@
 #include <fstream>
 #include <algorithm>
 #include "Lexer.h"
+#include "Parser.h"
 #include "LexerTests.h"
 #include "test_runner.h"
-
-#include "profile.h"
-
 #include <unordered_set>
 
 using namespace std;
 
 void CompileProgram(istream& input, ostream& output) {
-	Parse::Lexer lexer(CreateGrammar(), input);
+	auto grammar = CreateGrammar();
+	Parse::Lexer lexer(grammar, input);
 	lexer.Parse();
 	const auto& errors = lexer.GetErrors();	
 	if (errors.size()) {
-		output << errors.size() << " errors;\nErrors list:\n";
+		output << errors.size() << " lexer errors was found;\n";
 		for (const auto& error : errors)
 			output << error << endl;
 	}
 	else {
-		const auto& tokens = lexer.GetTokens();
-		for (const auto& token : tokens) {
-			output << setw(10) << token.position.line << setw(10) << token.position.col << setw(10) << token.code << "\t";
-			if (token.value.empty())
-				output << static_cast<char>(token.code) << endl;
-			else
-				output << token.value << endl;
-		}
+		// Lexer listing
+		//const auto& tokens = lexer.GetTokens();
+		//for (const auto& token : tokens) {
+		//	output << setw(10) << token.position.line << setw(10) << token.position.col << setw(10) << token.code << "\t";
+		//	if (token.value.empty())
+		//		output << static_cast<char>(token.code) << endl;
+		//	else
+		//		output << token.value << endl;
+		//}
+
+		Parse::Parser parser(grammar, lexer.GetTokens());
+		parser.Parse();
+		const auto& errors = parser.GetErrors();
+		if(errors.empty())
+			output << parser.RnderTree();
+		for (const auto& error : errors)
+			output << error << endl;
 	}
+}
+
+void StartTest(const string& path) {
+	ifstream input(path + "\\input.sig");
+	ofstream output(path + "\\generated.txt");
+	if (input.is_open() && output.is_open()) CompileProgram(input, output);
+	else throw runtime_error("Bad file path.");
+	input.close();
+	output.close();
 }
 
 int main(int argc, const char* argv[]) {
 	std::ios::sync_with_stdio(false);
-	TestRunner tr;
-	RunLexerTests(tr);
+	if (argc == 3 && string(argv[2]) == "-d") {
+		TestRunner tr;
+		RunLexerTests(tr);
+	}
 	try {
-		if (argc == 2) {
-			string path(argv[1]);
-			ifstream input(path+"\\input.sig");
-			ofstream output(path + "\\generated.txt");
-			if (input.is_open() && output.is_open()) CompileProgram(input, output);
-			else throw runtime_error("Bad file path.");
-			input.close();
-			output.close();
+		if (argc > 1) {
+			StartTest(argv[1]);
 			return 0;
 		}
 	}

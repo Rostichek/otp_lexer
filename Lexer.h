@@ -69,21 +69,26 @@ namespace Parse {
 
 	class Lexer {
 	public:
+		struct Complex {
+			std::optional<double> left;
+			std::optional<double> right;
+		};
+
 		struct LexemesList {
 			struct Item {
 				Item(Code code, Position position, std::string_view value) : code(code), position(position), value(value) {}
 				Item(Code code, Position position) : code(code), position(position) {}
 				Item() = default;
+				std::optional<Complex> complex;
 				Code code;
 				Position position;
 				std::string_view value;
-
 			};
 			std::vector<Item> items;
 			std::vector<std::string> errors;
 		};
 
-		Lexer(std::shared_ptr<Grammar> gramar, std::istream& input) : program(input), gramar(gramar) {};
+		Lexer(std::shared_ptr<Grammar> grammar, std::istream& input) : program(input), grammar(grammar) {};
 
 		void Parse();
 
@@ -91,7 +96,7 @@ namespace Parse {
 		const std::vector<LexemesList::Item>& GetTokens() const;
 
 	private:
-		std::shared_ptr<Grammar> gramar;
+		std::shared_ptr<Grammar> grammar;
 		Reader program;
 		std::optional<LexemesList> parsed_program;
 		size_t row = 0;
@@ -102,8 +107,8 @@ namespace Parse {
 		void KeywordOrIdentifier();
 		void Constant();
 
-		void LeftPart(std::string& buffer);
-		void RightPart(std::string& buffer);
+		std::optional<double> LeftPart(std::string& buffer);
+		std::optional<double> RightPart(std::string& buffer);
 
 		size_t Position() const;
 

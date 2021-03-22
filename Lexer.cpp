@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <cmath>
 #include <sstream>
 
 using namespace std;
@@ -33,7 +34,7 @@ namespace Parse {
 
 	void Lexer::Whitespace() {
 		char next;
-		while (!gramar->symbols_attributes[next = program.peek()]) {
+		while (!grammar->symbols_attributes[next = program.peek()]) {
 			if (next == '\n') row++;
 			program.ignore();
 			if (program.peek() == Eof) break;
@@ -68,17 +69,17 @@ namespace Parse {
 			if (isalnum(next)) buffer += program.get();
 			else break;
 		}
-		if (gramar->key_words.count(buffer)) {
-			Tokens().emplace_back(gramar->key_words[buffer], begin, gramar->key_words.find(buffer)->first);
+		if (grammar->key_words.count(buffer)) {
+			Tokens().emplace_back(grammar->key_words[buffer], begin, grammar->key_words.find(buffer)->first);
 		}
 		else {
-			gramar->identifiers.try_emplace(buffer,
-				gramar->identifier_code + gramar->identifiers.size());
-			Tokens().emplace_back(gramar->identifiers[buffer], begin, gramar->identifiers.find(buffer)->first);
+			grammar->identifiers.try_emplace(buffer,
+				grammar->identifier_code + grammar->identifiers.size());
+			Tokens().emplace_back(grammar->identifiers[buffer], begin, grammar->identifiers.find(buffer)->first);
 		}
 	}
 
-	void Lexer::LeftPart(string& buffer) {
+	optional<double> Lexer::LeftPart(string& buffer) {
 		while (program) {
 			if (isdigit(program.peek())) {
 				buffer += program.peek();
@@ -86,18 +87,20 @@ namespace Parse {
 			}
 			else {
 				char next = program.peek();
-				if (!gramar->symbols_attributes[next] || next == '\'') return;
+				if (!grammar->symbols_attributes[next] || next == '\'') 
+					if (buffer.size()) return atoi(buffer.c_str());
+					else return {};
 				ThrowErr("Wrong left part");
 			}
 		}
 	}
 
-	void Lexer::RightPart(string& buffer) {
+	optional<double> Lexer::RightPart(string& buffer) {
 		if (isdigit(program.peek())) {
-			LeftPart(buffer);
-			return;
+			return LeftPart(buffer);
 		}
 		string local_buffer;
+		string digit;
 		while (program) {
 			if (program.peek() == '(') {
 				program.ignore();
@@ -110,14 +113,16 @@ namespace Parse {
 		}
 		Whitespace();
 		while (program) {
-			if (isdigit(program.peek()))
+			if (isdigit(program.peek())) {
+				digit += program.peek();
 				local_buffer += program.get();
+			}
 			else {
 				Whitespace();
 				if (program.peek() == ')') {
 					buffer += local_buffer + ')';
 					program.ignore();
-					return;
+					return exp(atoi(digit.c_str()));
 				}
 				ThrowErr("Wrong right part : unclosed exponent body");
 			}
@@ -135,13 +140,14 @@ namespace Parse {
 
 	void Lexer::Constant() {
 		auto begin = program.position();
+		Complex complex;
 		string left;
 		string right;
 		program.get();
 		bool error = 0;
 		Whitespace();
 		try {
-			LeftPart(left);
+			complex.left = LeftPart(left);
 		}
 		catch (LexerError& ex) {
 			error = true;
@@ -150,7 +156,7 @@ namespace Parse {
 		Whitespace();
 		if (program.peek() != '\'' && !error) {
 			try {
-				RightPart(right);
+				complex.right = RightPart(right);
 			}
 			catch (LexerError& ex) {
 				error = true;
@@ -162,9 +168,10 @@ namespace Parse {
 		if (error) return;
 		if (right.size()) left += ' ';
 		string buffer = '\'' + left + right + '\'';
-		gramar->constants.try_emplace(buffer,
-			gramar->constant_code + gramar->constants.size());
-		Tokens().emplace_back(gramar->constants[buffer], begin, gramar->constants.find(buffer)->first);
+		grammar->constants.try_emplace(buffer,
+			grammar->constant_code + grammar->constants.size());
+		Tokens().emplace_back(grammar->constants[buffer], begin, grammar->constants.find(buffer)->first);
+		Tokens().back().complex = complex;
 	}
 	
 	void Lexer::Parse() {
@@ -173,7 +180,7 @@ namespace Parse {
 		while(program.peek() != Eof) {
 			char next = program.peek();
 			try {
-				switch (gramar->symbols_attributes[next]) {
+				switch (grammar->symbols_attributes[next]) {
 				case 0:
 					Whitespace();
 					break;

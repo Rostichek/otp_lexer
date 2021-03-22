@@ -1,0 +1,1 @@
+Parser: Error (line 4, column 9): ‘BEGIN’ expected but ‘'4'’ found;

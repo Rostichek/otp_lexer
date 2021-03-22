@@ -7,27 +7,29 @@ using namespace Parse;
 using namespace std;
 
 shared_ptr<Grammar> CreateGrammar() {
-	auto gramar = make_shared<Grammar>();
-	gramar->symbols_attributes.fill(10);
-	for (size_t i = 0; i < gramar->symbols_attributes.size(); ++i) {
-		if ((i >= 'A' && i <= 'Z') || (i >= 'a' && i <= 'z'))
-			gramar->symbols_attributes[i] = 2;
+	auto grammar = make_shared<Grammar>();
+	grammar->symbols_attributes.fill(10);
+	for (size_t i = 0; i < grammar->symbols_attributes.size(); ++i) {
+		if ((i >= 'A' && i <= 'Z'))
+			grammar->symbols_attributes[i] = 2;
 		else if (i >= '0' && i <= '9')
-			gramar->symbols_attributes[i] = 1;
-		if (i >= 9 && i <= 13)
-			gramar->symbols_attributes[i] = 0;
+			grammar->symbols_attributes[i] = 1;
+		if (i >= 9 && i <= 13 || (i >= 'a' && i <= 'z'))
+			grammar->symbols_attributes[i] = 0;
 	}
-	gramar->symbols_attributes[40] = 4;
-	gramar->symbols_attributes[32] = 0;
-	gramar->symbols_attributes[36] = 5;
-	gramar->symbols_attributes[39] = 6;
-	gramar->symbols_attributes[59] = 3;
-	gramar->symbols_attributes[61] = 3;
-	gramar->key_words["PROGRAM"] = 401;
-	gramar->key_words["BEGIN"] = 402;
-	gramar->key_words["END"] = 403;
-	gramar->key_words["CONST"] = 404;
-	return gramar;
+	grammar->symbols_attributes[40] = 4;
+	grammar->symbols_attributes[32] = 0;
+	grammar->symbols_attributes[36] = 5;
+	grammar->symbols_attributes[39] = 6;
+	grammar->symbols_attributes['='] = 3;
+	grammar->symbols_attributes[';'] = 3;
+	grammar->symbols_attributes['.'] = 3;
+	grammar->symbols_attributes[40] = 4;
+	grammar->key_words["PROGRAM"] = 401;
+	grammar->key_words["BEGIN"] = 402;
+	grammar->key_words["END"] = 403;
+	grammar->key_words["CONST"] = 404;
+	return grammar;
 }
 
 void TestWhitespaces() {
@@ -67,6 +69,7 @@ void TestComments() {
 		ASSERT_EQUAL(lexer.GetErrors().size(), 1);
 	}
 }
+
 
 void TestDelimiters() {
 	stringstream program;
