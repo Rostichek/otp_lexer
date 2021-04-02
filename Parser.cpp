@@ -50,7 +50,7 @@ void Parser::ThrowErr(string&& expected, LexemeIt found) {
 void Parser::Parse() {
 	try {
 		tree->children.push_back(Program());
-		if (lexeme != lexemes_list.end()) throw ParserError("Parser: Error : The program does not end after ‘.’;");
+		if (lexeme != lexemes_list.end()) ThrowErr("EOF", GetLexeme());
 	}
 	catch (ParserError& pr) {
 		errors.push_back(pr.what());
@@ -113,18 +113,22 @@ shared_ptr<Parser::Node> Parser::Declarations() {
 
 shared_ptr<Parser::Node> Parser::ConstantDeclarations() {
 	auto this_node = make_shared<Node>("<constant-declarations>");
-	if (GetLexeme()->code != grammar->key_words["CONST"]) ThrowErr("CONST", GetLexeme());
-	else this_node->children.emplace_back(make_shared<Node>(lexeme));
-	Scan();
-	if (GetLexeme()->code < 1001)  this_node->children.push_back(Empty());
-	else this_node->children.push_back(ConstantDeclarationsList());
+	if (GetLexeme()->code == grammar->key_words["CONST"]) {
+		this_node->children.emplace_back(make_shared<Node>(lexeme));
+		Scan();
+		if (GetLexeme()->code < 1001) ThrowErr("<constant-declarations-list>", GetLexeme());
+		this_node->children.push_back(ConstantDeclarationsList());
+	} 
+	else this_node->children.push_back(Empty());
 	return this_node;
 }
 
 shared_ptr<Parser::Node> Parser::ConstantDeclarationsList() {
 	auto this_node = make_shared<Node>("<constant-declarations-list>");
-	this_node->children.push_back(ConstantDeclaration());
-	if (GetLexeme()->code >= 1001) this_node->children.push_back(ConstantDeclarationsList());
+	if (GetLexeme()->code >= 1001) {
+		this_node->children.push_back(ConstantDeclaration());
+		this_node->children.push_back(ConstantDeclarationsList());
+	}
 	else this_node->children.push_back(Empty());;
 	return this_node;
 }

@@ -1,1 +1,1 @@
-Parser: Error : The program does not end after ‘.’;
+Parser: Error (line 7, column 5): ‘EOF’ expected but ‘CONST’ found;

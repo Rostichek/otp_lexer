@@ -8,7 +8,6 @@
 ....<block>
 ......<declarations>
 ........<constant-declarations>
-..........404 CONST
 ..........<empty>
 ......402 BEGIN
 ......<statements-list>

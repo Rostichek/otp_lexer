@@ -1,1 +1,1 @@
-Parser: Error (line 2, column 9): ‘CONST’ expected but ‘VAL1’ found;
+Parser: Error (line 2, column 9): ‘BEGIN’ expected but ‘VAL1’ found;
