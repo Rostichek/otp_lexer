@@ -1,10 +1,10 @@
-# kv81 Koval Rostyslav OPT
-
 ## Usage
-Lexer.exe [input path]
+`Lexer.exe [-d | path to input.sig]`
+
+-d - debug mode with starting all tests from tests.txt
 
 ## Grammar 
-1. < signal-program> --> < program >
+1. < signal-program > --> < program >
 2. < program > --> PROGRAM < procedure-identifier > ;< block >.
 3. < block > --> < declarations > BEGIN < statements-list > END
 4. < statements-list > --> < empty >
@@ -25,5 +25,12 @@ Lexer.exe [input path]
 19. < digit > --> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 20. < letter > --> A | B | C | D | ... | Z
 
-## Graph
-![graph](https://i.imgur.com/HJpohLP.png)
+## List of processed errors
+### Lexer
+* Unckosed comment
+* Illegal symbol
+* Wrong complex constant
+### Parser
+* Inconsistency of the order of lexemes with grammar
+### Code Generator
+* Repeating identifiers
