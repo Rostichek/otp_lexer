@@ -20,7 +20,8 @@ namespace Parse {
 		std::string RnderTree();
 		const std::vector<std::string>& GetErrors() const;
 
-	private:
+		auto GetTree() { return tree; }
+
 		struct Node {
 			Node(std::string not_term) : not_term(not_term) {};
 			Node(LexemeIt term) : term(term) {};
@@ -30,6 +31,7 @@ namespace Parse {
 			std::vector<std::shared_ptr<Node>> children;
 		};
 
+	private:
 		std::shared_ptr<Node> tree = std::make_unique<Node>("<signal_program>");
 		std::shared_ptr<Grammar> grammar;
 		const std::vector<Parse::Lexer::LexemesList::Item>& lexemes_list;
@@ -49,6 +51,7 @@ namespace Parse {
 		std::shared_ptr<Node> Block();
 		std::shared_ptr<Node> Declarations();
 		std::shared_ptr<Node> StatementsList();
+		std::shared_ptr<Node> Statement();
 		std::shared_ptr<Node> ConstantDeclarations();
 		std::shared_ptr<Node> ConstantDeclarationsList();
 		std::shared_ptr<Node> ConstantDeclaration();

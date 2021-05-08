@@ -70,8 +70,9 @@ namespace Parse {
 	class Lexer {
 	public:
 		struct Complex {
-			std::optional<double> left;
-			std::optional<double> right;
+			std::optional<uint64_t> left;
+			std::optional<uint64_t> right;
+			std::optional<uint64_t> exp;
 		};
 
 		struct LexemesList {
@@ -108,7 +109,7 @@ namespace Parse {
 		void Constant();
 
 		std::optional<double> LeftPart(std::string& buffer);
-		std::optional<double> RightPart(std::string& buffer);
+		void RightPart(Complex& complex, std::string& buffer);
 
 		size_t Position() const;
 

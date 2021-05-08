@@ -1,0 +1,8 @@
+PROGRAM TEST1; 
+	CONST
+		VAL1 = '100';	
+		VAL1 = '4';
+	BEGIN
+			
+	END.
+

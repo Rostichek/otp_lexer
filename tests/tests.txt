@@ -1,0 +1,17 @@
+C:\Users\User\source\repos\Lexer\Debug\tests\test_duplicate
+C:\Users\User\source\repos\Lexer\Debug\tests\test_err_1
+C:\Users\User\source\repos\Lexer\Debug\tests\test_err_2
+C:\Users\User\source\repos\Lexer\Debug\tests\test_err_3
+C:\Users\User\source\repos\Lexer\Debug\tests\test_err_4
+C:\Users\User\source\repos\Lexer\Debug\tests\test_err_5
+C:\Users\User\source\repos\Lexer\Debug\tests\test_err_6
+C:\Users\User\source\repos\Lexer\Debug\tests\test_err_7
+C:\Users\User\source\repos\Lexer\Debug\tests\test_err_8
+C:\Users\User\source\repos\Lexer\Debug\tests\test_err_9
+C:\Users\User\source\repos\Lexer\Debug\tests\test_err_10
+C:\Users\User\source\repos\Lexer\Debug\tests\test_err_11
+C:\Users\User\source\repos\Lexer\Debug\tests\test_max
+C:\Users\User\source\repos\Lexer\Debug\tests\test_simple
+C:\Users\User\source\repos\Lexer\Debug\tests\test_without_constants
+C:\Users\User\source\repos\Lexer\Debug\tests\test_lexer
+C:\Users\User\source\repos\Lexer\Debug\tests\test_same_names

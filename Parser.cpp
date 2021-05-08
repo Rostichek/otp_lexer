@@ -101,7 +101,44 @@ shared_ptr<Parser::Node> Parser::Block() {
 
 shared_ptr<Parser::Node> Parser::StatementsList() {
 	auto this_node = make_shared<Node>("<statements-list>");
-	this_node->children.push_back(Empty());
+	if ((GetLexeme()->code == grammar->key_words["LOOP"])
+		|| (GetLexeme()->code == grammar->key_words["IN"])
+		|| (GetLexeme()->code == grammar->key_words["RETURN"])) {
+		this_node->children.push_back(Statement());
+		this_node->children.push_back(StatementsList());
+	} 
+	else this_node->children.push_back(Empty());
+	return this_node;
+}
+
+shared_ptr<Parser::Node> Parser::Statement() {
+	auto this_node = make_shared<Node>("<statement>");
+	if (GetLexeme()->code == grammar->key_words["LOOP"]) {
+		this_node->children.emplace_back(make_shared<Node>(lexeme));
+		Scan();
+		this_node->children.push_back(StatementsList());
+		if (GetLexeme()->code != grammar->key_words["ENDLOOP"]) ThrowErr("ENDLOOP", GetLexeme());
+		else this_node->children.emplace_back(make_shared<Node>(lexeme));
+		Scan();
+		if (GetLexeme()->code != ';') ThrowErr(";", GetLexeme());
+		else this_node->children.emplace_back(make_shared<Node>(lexeme));
+		Scan();
+	} 
+	else if (GetLexeme()->code == grammar->key_words["RETURN"]) {
+		this_node->children.emplace_back(make_shared<Node>(lexeme));
+		Scan();
+		if (GetLexeme()->code != ';') ThrowErr(";", GetLexeme());
+		else this_node->children.emplace_back(make_shared<Node>(lexeme));
+		Scan();
+	}
+	else if (GetLexeme()->code == grammar->key_words["IN"]) {
+		this_node->children.emplace_back(make_shared<Node>(lexeme));
+		Scan();
+		this_node->children.push_back(Identifier());
+		if (GetLexeme()->code != ';') ThrowErr(";", GetLexeme());
+		else this_node->children.emplace_back(make_shared<Node>(lexeme));
+		Scan();
+	}
 	return this_node;
 }
 

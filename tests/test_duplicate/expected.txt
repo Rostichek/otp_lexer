@@ -1,36 +1,13 @@
-<signal_program>
-..<program>
-....401 PROGRAM
-....<procedure-identifier>
-......<identifier>
-........1001 TEST1
-....59 ;
-....<block>
-......<declarations>
-........<constant-declarations>
-..........404 CONST
-..........<constant-declarations-list>
-............<constant-declaration>
-..............<constant-identifier>
-................<identifier>
-..................1002 A
-..............61 =
-..............<constant>
-................501 '1'
-..............59 ;
-............<constant-declarations-list>
-..............<constant-declaration>
-................<constant-identifier>
-..................<identifier>
-....................1003 B
-................61 =
-................<constant>
-..................501 '1'
-................59 ;
-..............<constant-declarations-list>
-................<empty>
-......402 BEGIN
-......<statements-list>
-........<empty>
-......403 END
-....46 .
+push rbp
+mov rbp, rsp
+; A
+mov QWORD PTR[rbp - 8], 1
+; B
+mov QWORD PTR[rbp - 16], 1
+pop rbp
+ret
+
+                    IDENTIFIER      TYPE    OFFSET      SIZE
+                         TEST1   PROGRAM         0         0
+                             A     CONST         0         8
+                             B     CONST         8         8

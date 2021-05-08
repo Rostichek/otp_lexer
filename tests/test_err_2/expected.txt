@@ -1,1 +1,4 @@
 Parser: Error (line 2, column 5): ‘;’ expected but ‘CONST’ found;
+
+
+                    IDENTIFIER      TYPE    OFFSET      SIZE

@@ -1,1 +1,4 @@
 Parser: Error (line 3, column 14): ‘=’ expected but ‘'100'’ found;
+
+
+                    IDENTIFIER      TYPE    OFFSET      SIZE

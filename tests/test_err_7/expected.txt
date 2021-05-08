@@ -1,1 +1,4 @@
 Parser: Error (line 3, column 16): ‘<complex-constant>’ expected but ‘VAL3’ found;
+
+
+                    IDENTIFIER      TYPE    OFFSET      SIZE

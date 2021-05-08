@@ -1,16 +1,7 @@
-<signal_program>
-..<program>
-....401 PROGRAM
-....<procedure-identifier>
-......<identifier>
-........1001 TEST1
-....59 ;
-....<block>
-......<declarations>
-........<constant-declarations>
-..........<empty>
-......402 BEGIN
-......<statements-list>
-........<empty>
-......403 END
-....46 .
+push rbp
+mov rbp, rsp
+pop rbp
+ret
+
+                    IDENTIFIER      TYPE    OFFSET      SIZE
+                         TEST1   PROGRAM         0         0

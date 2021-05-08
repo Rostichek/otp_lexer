@@ -95,9 +95,10 @@ namespace Parse {
 		}
 	}
 
-	optional<double> Lexer::RightPart(string& buffer) {
+	void Lexer::RightPart(Complex& complex, string& buffer) {
 		if (isdigit(program.peek())) {
-			return LeftPart(buffer);
+			complex.right = LeftPart(buffer);
+			return;
 		}
 		string local_buffer;
 		string digit;
@@ -122,7 +123,8 @@ namespace Parse {
 				if (program.peek() == ')') {
 					buffer += local_buffer + ')';
 					program.ignore();
-					return exp(atoi(digit.c_str()));
+					complex.exp = atoi(digit.c_str());
+					return;
 				}
 				ThrowErr("Wrong right part : unclosed exponent body");
 			}
@@ -156,7 +158,7 @@ namespace Parse {
 		Whitespace();
 		if (program.peek() != '\'' && !error) {
 			try {
-				complex.right = RightPart(right);
+				RightPart(complex, right);
 			}
 			catch (LexerError& ex) {
 				error = true;

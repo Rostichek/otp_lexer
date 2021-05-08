@@ -1,1 +1,4 @@
 Parser: Error (line 7, column 5): ‘EOF’ expected but ‘CONST’ found;
+
+
+                    IDENTIFIER      TYPE    OFFSET      SIZE

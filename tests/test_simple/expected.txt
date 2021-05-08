@@ -1,0 +1,11 @@
+push rbp
+mov rbp, rsp
+; A
+mov QWORD PTR[rbp - 16], 1
+mov QWORD PTR[rbp - 8], 1
+pop rbp
+ret
+
+                    IDENTIFIER      TYPE    OFFSET      SIZE
+                          TEST   PROGRAM         0         0
+                             A     CONST         0        16

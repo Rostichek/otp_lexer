@@ -1,1 +1,4 @@
 Parser: Error (line 9, column 5): ‘END’ expected but ‘.’ found;
+
+
+                    IDENTIFIER      TYPE    OFFSET      SIZE

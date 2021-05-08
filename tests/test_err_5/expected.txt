@@ -1,1 +1,4 @@
 Parser: Error (line 5, column 9): ‘;’ expected but ‘EMPTY’ found;
+
+
+                    IDENTIFIER      TYPE    OFFSET      SIZE

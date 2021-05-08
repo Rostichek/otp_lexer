@@ -1,0 +1,1 @@
+Code Generator: Error (line 4, column 9): The constant name 'VAL1' is used a second time;
